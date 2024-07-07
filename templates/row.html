@@ -1,0 +1,13 @@
+<div class="container-fluid" id="%%SKU_ID%%">
+    <div class="btn-group">
+        <!-- Delete -->
+        <button type="button" class="btn-close" aria-label="Delete SKUs" onclick="deleteSKU('%%SKU_ID%%')"></button>
+
+        <!-- Add -->
+        <button type="button" class="btn btn-secondary" aria-label="Add Quantity" onclick="updateSkuQuantity('%%SKU_ID%%', 1)"><i class="bi bi-plus"></i></button>
+
+        <!-- Remove -->
+        <button type="button" class="btn btn-secondary" aria-label="Add Quantity" onclick="updateSkuQuantity('%%SKU_ID%%', -1)"><i class="bi bi-dash"></i></button>
+    </div>
+    <p>%%SKU_QUANTITY%%x %%SKU_NAME%%</p>
+</div>
