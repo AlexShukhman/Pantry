@@ -12,6 +12,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
 
+    <!-- JQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
+
     <!-- Style (inline) -->
     <style>
         body {
@@ -39,18 +42,36 @@
 <body>
     <h1>Welcome to the Pantry!</h1>
     <p>Here's what we got:</p>
-    <div class="container">
+    <div class="container" style="margin-bottom: 1em">
+        <input style="text-align: center" type="text" class="form-control" placeholder="Search Item Name" list="list-skus" id="input-datalist" onchange="filterDisplay(this)">
+        <datalist id="list-skus">
+            %%SKU_OPTIONS%%
+        </datalist>
+    </div>
+    <div id="rows" class="container">
         %%ROWS%%
     </div>
     <form>
         <div class="form-row" id="newRow">
-            <input type="number" min=1 id="newQuantity" placeholder="quantity">
+            <input type="number" min=1 max=999 id="newQuantity" placeholder="0">
             <input type="text" id="newName" placeholder="item name">
             <button type="button" class="btn btn-sm btn-secondary" aria-label="Add new SKU" onclick="addSKU()">Add New</button>
         </div>
     </form>
 
     <script>
+        function filterDisplay(input) {
+            const rows = document.getElementById("rows");
+
+            Array.from(rows.children).forEach(child => {
+                if (child.id.toString() !== input.value.toString() && !!input.value.toString()) {
+                    child.hidden = true;
+                } else {
+                    child.hidden = false;
+                }
+            });
+        }
+
         function addSKU() {
             const quantity = document.getElementById("newQuantity").valueAsNumber;
             const name = document.getElementById("newName").value;

@@ -1,13 +1,13 @@
-<div class="row justify-content-md-center" id="%%SKU_ID%%">
-    <div class="col btn-group">
-        <!-- Delete -->
-        <button type="button" class="btn btn-light" aria-label="Delete SKUs" onclick="deleteSKU('%%SKU_ID%%')"><i class="bi bi-x"></i></button>
-
+<div class="row justify-content-md-center" id="%%SKU_NAME%%">
+    <div class="col"><p>%%SKU_QUANTITY%%x %%SKU_NAME%%</p></div>
+    <div class="col btn-group btn-group-sm" role="group">
         <!-- Add -->
-        <button type="button" class="btn btn-light" aria-label="Add Quantity" onclick="updateSKUQuantity('%%SKU_ID%%', 1)"><i class="bi bi-plus"></i></button>
+        <button type="button" class="btn btn-sm btn-light" aria-label="Add Quantity" onclick="updateSKUQuantity('%%SKU_ID%%', 1)"><i class="bi bi-plus"></i></button>
 
         <!-- Remove -->
-        <button type="button" class="btn btn-light" aria-label="Add Quantity" onclick="updateSKUQuantity('%%SKU_ID%%', -1)"><i class="bi bi-dash"></i></button>
+        <button type="button" class="btn btn-sm btn-light" aria-label="Add Quantity" onclick="updateSKUQuantity('%%SKU_ID%%', -1)"><i class="bi bi-dash"></i></button>
+
+        <!-- Delete -->
+        <button type="button" class="btn btn-sm btn-light" aria-label="Delete SKUs" onclick="deleteSKU('%%SKU_ID%%')"><i class="bi bi-x"></i></button>
     </div>
-    <div class="col"><p>%%SKU_QUANTITY%%x %%SKU_NAME%%</p></div>
 </div>

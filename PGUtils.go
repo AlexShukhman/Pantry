@@ -24,7 +24,7 @@ func CreateSKU(dbPool *pgxpool.Pool, sku SKUCreateBody) (err error) {
 
 // ReadSKUs will get all SKU s in PantrySKUs table
 func ReadSKUs(dbPool *pgxpool.Pool) (renderedRows []SKU, err error) {
-	query := `SELECT * FROM pantryskus;`
+	query := `SELECT * FROM pantryskus ORDER BY sku_name;`
 	rows, err := dbPool.Query(context.Background(), query)
 	if err != nil {
 		return
