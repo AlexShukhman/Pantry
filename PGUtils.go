@@ -3,12 +3,27 @@ package main
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// GetAllSKUs will get all SKU s in PantrySKUs table
-func GetAllSKUs(dbPool *pgxpool.Pool) (renderedRows []SKU, err error) {
+// CreateSKU will add a SKU to the PantrySKUs table
+func CreateSKU(dbPool *pgxpool.Pool, sku SKUCreateBody) (err error) {
+	query := `INSERT INTO pantryskus (id, sku_name, sku_quantity) VALUES ($1, $2, $3)`
+
+	_, err = dbPool.Exec(
+		context.Background(),
+		query,
+		uuid.New().String(),
+		sku.SkuName,
+		sku.SkuQuantity,
+	)
+
+	return err
+}
+
+// ReadSKUs will get all SKU s in PantrySKUs table
+func ReadSKUs(dbPool *pgxpool.Pool) (renderedRows []SKU, err error) {
 	query := `SELECT * FROM pantryskus;`
 	rows, err := dbPool.Query(context.Background(), query)
 	if err != nil {
@@ -33,17 +48,20 @@ func GetAllSKUs(dbPool *pgxpool.Pool) (renderedRows []SKU, err error) {
 	return skus, nil
 }
 
-// InsertSKU will add a SKU to the PantrySKUs table
-func InsertSKU(dbPool *pgxpool.Pool, sku SKU) (err error) {
-	query := `INSERT INTO pantryskus (id, sku_name, sku_quantity) VALUES (@id, @sku_name, @sku_quantity)`
+// UpdateSKU will update the SKU according to strict allowed updates
+func UpdateSKU(dbPool *pgxpool.Pool, skuId string, update SKUUpdateBody) (err error) {
+	query := `UPDATE pantryskus SET sku_quantity = sku_quantity + $1 WHERE id = $2`
 
-	args := pgx.NamedArgs{
-		"id":           sku.ID,
-		"sku_name":     sku.SkuName,
-		"sku_quantity": sku.SkuQuantity,
-	}
+	_, err = dbPool.Exec(context.Background(), query, update.AdditionalQuantity, skuId)
 
-	_, err = dbPool.Exec(context.Background(), query, args)
+	return err
+}
+
+// DeleteSKU will delete the SKU by skuId
+func DeleteSKU(dbPool *pgxpool.Pool, skuId string) (err error) {
+	query := `DELETE FROM pantryskus WHERE id = $1`
+
+	_, err = dbPool.Exec(context.Background(), query, skuId)
 
 	return err
 }
