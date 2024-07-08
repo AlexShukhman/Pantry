@@ -1,6 +1,6 @@
 # Pantry
 
-_A simple pantry app using golang, http, and postgres._
+_A simple pantry app using Golang, HTTP, and PostgreSQL._
 
 ## Requirements
 
