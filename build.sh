@@ -1,0 +1,1 @@
+./update_assets.sh && go build -o ./build/
