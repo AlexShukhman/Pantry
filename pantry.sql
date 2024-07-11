@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS  tags
     id              varchar(255)    not null unique primary key
 );
 
-CREATE TABLE IF NOT EXISTS skutags
+CREATE TABLE IF NOT EXISTS sku_tags
 (
-    tag             varchar(255)    not null primary key references tags(id) on delete cascade,
-    sku             uuid            not null primary key references skus(id) on delete cascade
+    tag_id             varchar(255)    not null primary key references tags(id) on delete cascade,
+    sku_id             uuid            not null primary key references skus(id) on delete cascade
 );
