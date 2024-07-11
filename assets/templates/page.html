@@ -22,6 +22,10 @@
             justify-content: center;
         }
 
+        h1 {
+            padding-top: 2em;
+        }
+
         button {
             vertical-align: baseline !important;
         }
@@ -37,13 +41,17 @@
             margin: auto;
             padding: 0.3em;
         }
+
+        .btn {
+            flex: none !important;
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to the Pantry!</h1>
+    <h1>Welcome to the %%LOC_TAG%%!</h1>
     <p>Here's what we got:</p>
-    <div class="container" style="margin-bottom: 1em">
-        <input style="text-align: center" type="text" class="form-control" placeholder="Search Item Name" list="list-skus" id="input-datalist" onchange="filterDisplay(this)">
+    <div class="container" style="padding-bottom: 1em">
+        <input style="text-align: center" type="text" class="form-control" placeholder="Search Item Name" autocomplete="on" list="list-skus" id="input-datalist" onchange="filterDisplay(this)">
         <datalist id="list-skus">
             %%SKU_OPTIONS%%
         </datalist>
@@ -51,10 +59,10 @@
     <div id="rows" class="container">
         %%ROWS%%
     </div>
-    <form>
+    <form style="padding-bottom: 2em; padding-top: 1em;">
         <div class="form-row" id="newRow">
             <input type="number" min=1 max=999 id="newQuantity" placeholder="0">
-            <input type="text" id="newName" placeholder="item name">
+            <input type="text" id="newName" placeholder="Item Name">
             <button type="button" class="btn btn-sm btn-secondary" aria-label="Add new SKU" onclick="addSKU()">Add New</button>
         </div>
     </form>

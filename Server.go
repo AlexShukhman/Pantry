@@ -2,15 +2,17 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v5/pgxpool"
+	lop "github.com/samber/lo/parallel"
 	"github.com/spf13/viper"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func main() {
@@ -47,21 +49,24 @@ func main() {
 	viper.Set("PAGE_HTML", pageHTML)
 
 	// Connect to DB
-	dbURL := "postgres://" + viper.GetString("DB_USER") + ":" + viper.GetString("DB_PASS") +
-		"@" + viper.GetString("DB_HOST") + ":" + viper.GetString("DB_PORT") +
-		"/" + viper.GetString("DB_NAME")
-	dbPool, err := pgxpool.New(context.Background(), dbURL)
+	dsn := "host=" + viper.GetString("DB_HOST") +
+		" user=" + viper.GetString("DB_USER") +
+		" password=" + viper.GetString("DB_PASS") +
+		" dbname=" + viper.GetString("DB_NAME") +
+		" port=" + viper.GetString("DB_PORT")
+	dbHandle, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = dbPool.Ping(context.Background())
+
+	err = InitializeDB(dbHandle)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	// Build server tools
 	serverContext := HTTPContext{
-		dbPool,
+		dbHandle,
 	}
 
 	// Build router
@@ -89,7 +94,7 @@ func (ctx *HTTPContext) CreateSKU(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	err = CreateSKU(ctx.DBPool, requestBody)
+	err = CreateSKU(ctx.DB, requestBody)
 	if err != nil {
 		errObj := APIResponseBody{false, err.Error()}
 		body, _ := json.Marshal(errObj)
@@ -102,7 +107,18 @@ func (ctx *HTTPContext) CreateSKU(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ctx *HTTPContext) ReadSKUs(w http.ResponseWriter, r *http.Request) {
-	skus, err := ReadSKUs(ctx.DBPool)
+	// Get tag from query
+	location := r.URL.Query().Get("location")
+	if location == "" {
+		location = "pantry"
+	}
+	location = strings.ToLower(location)
+
+	otherTags := lop.Map(r.URL.Query()["tags"], func(el string, _ int) string {
+		return strings.ToLower(el)
+	})
+
+	skus, err := ReadSKUs(ctx.DB, append(otherTags, location))
 
 	if err != nil {
 		errObj := APIResponseBody{false, err.Error()}
@@ -110,7 +126,7 @@ func (ctx *HTTPContext) ReadSKUs(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		http.Error(w, string(body), http.StatusInternalServerError)
 	} else {
-		html := BuildHTML(skus)
+		html := BuildHTML(skus, location)
 
 		io.WriteString(w, html)
 	}
@@ -124,7 +140,7 @@ func (ctx *HTTPContext) UpdateSKU(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if r.Method == http.MethodDelete {
 		// DELETE
-		err = DeleteSKU(ctx.DBPool, skuId)
+		err = DeleteSKU(ctx.DB, skuId)
 	} else {
 		// PATCH
 		var requestBody SKUUpdateBody
@@ -133,7 +149,7 @@ func (ctx *HTTPContext) UpdateSKU(w http.ResponseWriter, r *http.Request) {
 		jsonDecoder.DisallowUnknownFields()
 		err = jsonDecoder.Decode(&requestBody)
 		if err == nil {
-			err = UpdateSKU(ctx.DBPool, skuId, requestBody)
+			err = UpdateSKU(ctx.DB, skuId, requestBody)
 		}
 	}
 

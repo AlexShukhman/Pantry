@@ -7,7 +7,6 @@ _A simple pantry app using Golang, HTTP, and PostgreSQL._
 * Golang: `1.18`
 * Go-Bindata
 * PostgreSQL Server (may be remote)
-* PostgreSQL Client
 
 ## Quickstart
 

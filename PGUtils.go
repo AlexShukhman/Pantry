@@ -2,66 +2,81 @@
 package main
 
 import (
-	"context"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/gorm"
 )
 
-// CreateSKU will add a SKU to the PantrySKUs table
-func CreateSKU(dbPool *pgxpool.Pool, sku SKUCreateBody) (err error) {
-	query := `INSERT INTO pantryskus (id, sku_name, sku_quantity) VALUES ($1, $2, $3)`
+// InitializeDB will add all required tables to the DB if it's missing them
+func InitializeDB(db *gorm.DB) (err error) {
+	return db.AutoMigrate(&SKU{}, &Tag{}, &SKUTag{})
+}
 
-	_, err = dbPool.Exec(
-		context.Background(),
-		query,
-		uuid.New().String(),
-		sku.SkuName,
-		sku.SkuQuantity,
-	)
+// CreateSKU will add a SKU to the skus table
+func CreateSKU(db *gorm.DB, sku SKUCreateBody) (err error) {
+	newSKU := SKU{
+		SkuName:     sku.SkuName,
+		SkuQuantity: sku.SkuQuantity,
+	}
+
+	err = db.Select("sku_name", "sku_quantity").Create(newSKU).Error
 
 	return err
 }
 
-// ReadSKUs will get all SKU s in PantrySKUs table
-func ReadSKUs(dbPool *pgxpool.Pool) (renderedRows []SKU, err error) {
-	query := `SELECT * FROM pantryskus ORDER BY sku_name;`
-	rows, err := dbPool.Query(context.Background(), query)
-	if err != nil {
-		return
+// ReadSKUs will get all SKU s in skus table tagged "pantry"
+func ReadSKUs(db *gorm.DB, tags []string) (renderedRows []SKU, err error) {
+	// query := `SELECT DISTINCT skus.sku_name as sku_name, skus.id as id, skus.sku_quantity as sku_quantity FROM sku_tags RIGHT JOIN skus ON sku_tags.sku = skus.id WHERE sku_tags.tag IN $1 ORDER BY skus.sku_name;`
+
+	var skus []SKU
+	result := db.
+		Joins("left join sku_tags on skus.id = sku_tags.sku_id").
+		Where("sku_tags.tag_id IN ?", tags).
+		Distinct(
+			"skus.sku_name as sku_name",
+			"skus.id as id",
+			"skus.sku_quantity as sku_quantity",
+		).
+		Order("skus.sku_name").
+		Find(&skus)
+
+	if result.Error != nil {
+		return renderedRows, err
 	}
-
-	skus := []SKU{}
-	for rows.Next() {
-		sku := SKU{}
-		err := rows.Scan(
-			&sku.ID,
-			&sku.SkuName,
-			&sku.SkuQuantity,
-		)
-		if err != nil {
-			return renderedRows, err
-		}
-
-		skus = append(skus, sku)
-	}
-
 	return skus, nil
 }
 
 // UpdateSKU will update the SKU according to strict allowed updates
-func UpdateSKU(dbPool *pgxpool.Pool, skuId string, update SKUUpdateBody) (err error) {
-	query := `UPDATE pantryskus SET sku_quantity = sku_quantity + $1 WHERE id = $2`
+func UpdateSKU(db *gorm.DB, skuId string, update SKUUpdateBody) (err error) {
+	// query := `UPDATE skus SET sku_quantity = sku_quantity + $1 WHERE id = $2`
+	skuUUID, err := uuid.Parse(skuId)
+	if err != nil {
+		return
+	}
 
-	_, err = dbPool.Exec(context.Background(), query, update.AdditionalQuantity, skuId)
+	sku := SKU{
+		ID: skuUUID,
+	}
 
-	return err
+	return db.Transaction(func(tx *gorm.DB) error {
+		if update.AdditionalQuantity != 0 {
+			txErr := tx.Model(sku).UpdateColumn("sku_quantity", gorm.Expr("sku_quantity + ?", update.AdditionalQuantity)).Error
+
+			if txErr != nil {
+				return txErr
+			}
+		}
+
+		return nil
+	})
 }
 
 // DeleteSKU will delete the SKU by skuId
-func DeleteSKU(dbPool *pgxpool.Pool, skuId string) (err error) {
-	query := `DELETE FROM pantryskus WHERE id = $1`
+func DeleteSKU(db *gorm.DB, skuId string) (err error) {
+	// query := `DELETE FROM skus WHERE id = $1`
+	skuUUID, err := uuid.Parse(skuId)
+	if err != nil {
+		return
+	}
 
-	_, err = dbPool.Exec(context.Background(), query, skuId)
-
-	return err
+	return db.Delete(&SKU{}, skuUUID).Error
 }
