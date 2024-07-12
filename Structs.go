@@ -32,8 +32,10 @@ type Tag struct {
 }
 
 type SKUCreateBody struct {
-	SkuName     string `json:"name"`
-	SkuQuantity int16  `json:"quantity"`
+	SkuName     string   `json:"name"`
+	SkuQuantity int16    `json:"quantity"`
+	Location    string   `json:"location"`
+	Tags        []string `json:"tags"`
 }
 
 type SKUUpdateBody struct {

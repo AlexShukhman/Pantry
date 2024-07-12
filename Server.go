@@ -72,8 +72,10 @@ func main() {
 	// Build router
 	router := mux.NewRouter()
 	router.HandleFunc("/sku", serverContext.CreateSKU).Methods(http.MethodPost)
-	router.HandleFunc("/", serverContext.ReadSKUs).Methods(http.MethodGet)
 	router.HandleFunc("/sku/{skuId}", serverContext.UpdateSKU).Methods(http.MethodPatch, http.MethodDelete)
+
+	router.HandleFunc("/", serverContext.ReadSKUs).Methods(http.MethodGet)
+	router.HandleFunc("/{location}", serverContext.ReadSKUs).Methods(http.MethodGet)
 
 	// Start server
 	fmt.Printf("Starting server on port %d... \n", viper.GetInt("SERVER_PORT"))
@@ -91,7 +93,14 @@ func (ctx *HTTPContext) CreateSKU(w http.ResponseWriter, r *http.Request) {
 	jsonDecoder.DisallowUnknownFields()
 	err := jsonDecoder.Decode(&requestBody)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if requestBody.Location == "" {
+		requestBody.Location = "pantry"
+	} else {
+		requestBody.Location = strings.ToLower(requestBody.Location)
 	}
 
 	err = CreateSKU(ctx.DB, requestBody)
@@ -108,11 +117,13 @@ func (ctx *HTTPContext) CreateSKU(w http.ResponseWriter, r *http.Request) {
 
 func (ctx *HTTPContext) ReadSKUs(w http.ResponseWriter, r *http.Request) {
 	// Get tag from query
-	location := r.URL.Query().Get("location")
+	vars := mux.Vars(r)
+	location := vars["location"]
 	if location == "" {
 		location = "pantry"
+	} else {
+		location = strings.ToLower(location)
 	}
-	location = strings.ToLower(location)
 
 	otherTags := lop.Map(r.URL.Query()["tags"], func(el string, _ int) string {
 		return strings.ToLower(el)

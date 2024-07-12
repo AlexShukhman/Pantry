@@ -12,15 +12,37 @@ func InitializeDB(db *gorm.DB) (err error) {
 }
 
 // CreateSKU will add a SKU to the skus table
-func CreateSKU(db *gorm.DB, sku SKUCreateBody) (err error) {
+func CreateSKU(db *gorm.DB, skuInfo SKUCreateBody) (err error) {
 	newSKU := SKU{
-		SkuName:     sku.SkuName,
-		SkuQuantity: sku.SkuQuantity,
+		ID:          uuid.New(),
+		SkuName:     skuInfo.SkuName,
+		SkuQuantity: skuInfo.SkuQuantity,
 	}
 
-	err = db.Select("sku_name", "sku_quantity").Create(newSKU).Error
+	tag := Tag{
+		ID: skuInfo.Location,
+	}
 
-	return err
+	newSKUTag := SKUTag{
+		SKUId: newSKU.ID,
+		TagId: tag.ID,
+	}
+
+	return db.Transaction(func(tx *gorm.DB) (txError error) {
+		txError = tx.Create(&newSKU).Error
+
+		if txError != nil {
+			return
+		}
+
+		txError = tx.FirstOrCreate(&Tag{}, tag).Error
+		if txError != nil {
+			return
+		}
+
+		txError = tx.Create(&newSKUTag).Error
+		return
+	})
 }
 
 // ReadSKUs will get all SKU s in skus table tagged "pantry"
@@ -78,5 +100,12 @@ func DeleteSKU(db *gorm.DB, skuId string) (err error) {
 		return
 	}
 
-	return db.Delete(&SKU{}, skuUUID).Error
+	return db.Transaction(func(tx *gorm.DB) error {
+		txError := tx.Unscoped().Where("sku_id = ?", skuUUID).Delete(&SKUTag{}).Error
+		if txError != nil {
+			return txError
+		}
+
+		return tx.Unscoped().Delete(&SKU{}, skuUUID).Error
+	})
 }

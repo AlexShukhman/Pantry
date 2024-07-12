@@ -81,10 +81,12 @@
         }
 
         function addSKU() {
-            const quantity = document.getElementById("newQuantity").valueAsNumber;
-            const name = document.getElementById("newName").value;
-
-            const body = { quantity, name };
+            const body = {
+                quantity: document.getElementById("newQuantity").valueAsNumber,
+                name: document.getElementById("newName").value,
+                tags: [],
+                location: window.location.href.split('/')[3],
+            };
             const request = new Request("/sku", {
                 method: "POST",
                 body: JSON.stringify(body),
